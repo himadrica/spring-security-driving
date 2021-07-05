@@ -14,6 +14,14 @@ public class Student {
 		this.cgpa = cgpa;
 	}
 	
+	
+	
+	public Student() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+
 	public long getId() {
 		return id;
 	}
@@ -39,6 +47,14 @@ public class Student {
 		this.cgpa = cgpa;
 	}
 	
+	
+	
+	@Override
+	public String toString() {
+		return "Student [id=" + id + ", firstName=" + firstName + ", lastName=" + lastName + ", cgpa=" + cgpa + "]";
+	}
+
+
 	public static class StudentBuilder{
 		
 		private long id;

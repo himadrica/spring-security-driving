@@ -2,6 +2,7 @@ package com.inspo.solutions.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -24,9 +25,15 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		http
+				.csrf()
+				.disable()
 				.authorizeRequests()
 				.antMatchers("/","index", "/css/*", "/js/*").permitAll()
 				.antMatchers("/api/**").hasRole(ApplicationRole.STUDENT.name())
+				.antMatchers(HttpMethod.DELETE, "/management/api/**").hasAnyAuthority(ApplicationPermission.COURSE_WRITE.getPermission())
+				.antMatchers(HttpMethod.PUT, "/management/api/**").hasAnyAuthority(ApplicationPermission.COURSE_WRITE.getPermission())
+				.antMatchers(HttpMethod.POST, "/management/api/**").hasAnyAuthority(ApplicationPermission.COURSE_WRITE.getPermission())
+				.antMatchers(HttpMethod.GET, "/management/api/**").hasAnyRole(ApplicationRole.ADMIN.name(), ApplicationRole.ASSISTANCE_ADMIN.name())
 				.anyRequest()
 				.authenticated()
 				.and()
@@ -39,15 +46,26 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 		UserDetails abhikuser = User.builder()
 				.username("abhik")
 				.password(passwordEncoder.encode("abhik"))
-				.roles(ApplicationRole.ADMIN.name())
+				//.roles(ApplicationRole.ADMIN.name())
+				.authorities(ApplicationRole.ADMIN.getGrantedAuthorities())
 				.build();
 		
 		UserDetails jaysen = User.builder()
 				.username("jaysen")
 				.password(passwordEncoder.encode("jaysen"))
-				.roles(ApplicationRole.STUDENT.name())
+				//.roles(ApplicationRole.STUDENT.name())
+				.authorities(ApplicationRole.ASSISTANCE_ADMIN.getGrantedAuthorities())
 				.build();
-		return new InMemoryUserDetailsManager(abhikuser, jaysen);
+		
+
+		UserDetails adhishree = User.builder()
+				.username("adhishree")
+				.password(passwordEncoder.encode("adhishree"))
+				//.roles(ApplicationRole.ASSISTANCE_ADMIN.name())
+				.authorities(ApplicationRole.STUDENT.getGrantedAuthorities())
+				.build();
+		
+		return new InMemoryUserDetailsManager(abhikuser, jaysen, adhishree);
 	}
 
 	
