@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,12 +34,14 @@ public class StudentManagement {
 		studentList.add(student3);
 		studentList.add(student4);
 	}
-	
+	// hasRole('ROLE_', hasAnyRole('ROLE_') hasAuthrity('permission') hasAnyAuthority('permission')
+	@PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_ASSISTANCE_ADMIN')")
 	@GetMapping
 	public ResponseEntity<List<Student> > getAllStudent(){
 		return new ResponseEntity<List<Student>>(studentList, HttpStatus.OK);
 	}
 	
+	@PreAuthorize("hasAuthority('student:write')")
 	@PostMapping
 	public ResponseEntity<Void> registerNewStudent(@RequestBody Student student) {
 		System.out.println("Student added");
@@ -47,12 +50,14 @@ public class StudentManagement {
 	}
 	
 	@DeleteMapping(path = "{sutdentId}")
+	@PreAuthorize("hasAuthority('student:write')")
 	public ResponseEntity<Void> deleteStudent(@PathVariable("sutdentId") Long sutdentId) {
 		System.out.println("Student deleted, " + sutdentId);
 		return new ResponseEntity<>(HttpStatus.OK);
 	}
 	
 	@PutMapping(path = "{sutdentId}")
+	@PreAuthorize("hasAuthority('student:write')")
 	public ResponseEntity<Void> updateStudent( @PathVariable("sutdentId") Long studentId, @RequestBody Student student) {
 		System.out.println("student updated, " + studentId);
 		System.out.println(student);
