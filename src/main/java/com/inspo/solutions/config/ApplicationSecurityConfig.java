@@ -1,5 +1,7 @@
 package com.inspo.solutions.config;
 
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -38,7 +40,9 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 				.anyRequest()
 				.authenticated()
 				.and()
-				.formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/courses", true); // form based authentication enable just this line
+				.formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/courses", true) // form based authentication enable just this line
+				.and()
+				.rememberMe().tokenValiditySeconds((int)TimeUnit.DAYS.toSeconds(21)).key("forhasingneedasecurekeytohashuserandexpiretime").userDetailsService(userDetailsServiceBean()); // it enables remember me, by setting sessionId expire to 2 weeks
 				//.httpBasic(); basic auth enable just this line and remove other login type
 	}
 	
