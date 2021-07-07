@@ -2,7 +2,6 @@ package com.inspo.solutions.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -12,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -28,7 +26,7 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		http
-				.csrf()			// recommendation: csfr is recommended for form based api submitted by browser
+				.csrf()			// recommendation: csfr is recommended for form based api submitted by browser, cross site request forgery
 				.disable()
 				.authorizeRequests()
 				.antMatchers("/","index", "/css/*", "/js/*").permitAll()
@@ -40,8 +38,8 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 				.anyRequest()
 				.authenticated()
 				.and()
-				.formLogin(); // form based authentication
-				//.httpBasic(); basic auth enable
+				.formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/courses", true); // form based authentication enable just this line
+				//.httpBasic(); basic auth enable just this line and remove other login type
 	}
 	
 	@Override
