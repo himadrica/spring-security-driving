@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -24,6 +25,12 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 	public ApplicationSecurityConfig(PasswordEncoder passwordEncoder) {
 		this.passwordEncoder = passwordEncoder;
 	}
+	
+	/*
+	 *	Some note about logout, if you enable csfr, then use post for logout as recommended
+	 *	If csfr is disabled, then you can use get. 
+	 * 
+	 */
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
@@ -40,9 +47,26 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 				.anyRequest()
 				.authenticated()
 				.and()
-				.formLogin().loginPage("/login").permitAll().defaultSuccessUrl("/courses", true) // form based authentication enable just this line
+					.formLogin()
+					.loginPage("/login")
+					.permitAll()
+					.defaultSuccessUrl("/courses", true) // form based authentication enable just this line
+					.passwordParameter("password")
+					.usernameParameter("username")
 				.and()
-				.rememberMe().tokenValiditySeconds((int)TimeUnit.DAYS.toSeconds(21)).key("forhasingneedasecurekeytohashuserandexpiretime").userDetailsService(userDetailsServiceBean()); // it enables remember me, by setting sessionId expire to 2 weeks
+					.rememberMe()
+					.tokenValiditySeconds((int)TimeUnit.DAYS.toSeconds(21))
+					.key("forhasingneedasecurekeytohashuserandexpiretime")
+					.userDetailsService(userDetailsServiceBean()) // it enables remember me, by setting sessionId expire to 2 weeks
+					.rememberMeParameter("remember-me")
+				.and()
+					.logout()
+					.logoutUrl("/logout")
+					.logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET")) // csfr is diabled then GET is ok
+					.clearAuthentication(true)
+					.invalidateHttpSession(true)
+					.deleteCookies("JSESSIONID","remember-me")
+					.logoutSuccessUrl("/login");
 				//.httpBasic(); basic auth enable just this line and remove other login type
 	}
 	
