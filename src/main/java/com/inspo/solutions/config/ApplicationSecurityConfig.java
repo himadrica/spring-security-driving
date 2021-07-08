@@ -1,6 +1,6 @@
 package com.inspo.solutions.config;
 
-import java.util.concurrent.TimeUnit;
+import javax.crypto.SecretKey;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,9 +10,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
+import com.inspo.solutions.jwt.JWTTokenVerificationFilter;
+import com.inspo.solutions.jwt.JWTusernameAndPasswordAuthenticationFilter;
 import com.inspo.solutions.security.ApplicationUserService;
 
 @Configuration
@@ -22,12 +24,17 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 	
 	private final PasswordEncoder passwordEncoder;
 	private final ApplicationUserService applicationUserService;
+	private final JWTConfig jwtConfig;
+	private final SecretKey secretkey;
 	
-	public ApplicationSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService) {
+	public ApplicationSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService,
+			JWTConfig jwtConfig, SecretKey secretkey) {
 		this.passwordEncoder = passwordEncoder;
 		this.applicationUserService = applicationUserService;
+		this.jwtConfig = jwtConfig;
+		this.secretkey = secretkey;
 	}
-	
+
 	/*
 	 *	Some note about logout, if you enable csfr, then use post for logout as recommended
 	 *	If csfr is disabled, then you can use get. 
@@ -39,35 +46,17 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 		http
 				.csrf()			// recommendation: csfr is recommended for form based api submitted by browser, cross site request forgery
 				.disable()
+				.sessionManagement()
+					.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+				.and()
+				.addFilter(new JWTusernameAndPasswordAuthenticationFilter(authenticationManager(), jwtConfig, secretkey))
+				.addFilterAfter(new JWTTokenVerificationFilter(jwtConfig,secretkey), JWTusernameAndPasswordAuthenticationFilter.class)
 				.authorizeRequests()
 				.antMatchers("/","index", "/css/*", "/js/*").permitAll()
 				.antMatchers("/api/**").hasRole(ApplicationRole.STUDENT.name())
-//				.antMatchers(HttpMethod.DELETE, "/management/api/**").hasAnyAuthority(ApplicationPermission.COURSE_WRITE.getPermission())
-//				.antMatchers(HttpMethod.PUT, "/management/api/**").hasAnyAuthority(ApplicationPermission.COURSE_WRITE.getPermission())
-//				.antMatchers(HttpMethod.POST, "/management/api/**").hasAnyAuthority(ApplicationPermission.COURSE_WRITE.getPermission())
-//				.antMatchers(HttpMethod.GET, "/management/api/**").hasAnyRole(ApplicationRole.ADMIN.name(), ApplicationRole.ASSISTANCE_ADMIN.name())
 				.anyRequest()
-				.authenticated()
-				.and()
-					.formLogin()
-					.loginPage("/login")
-					.permitAll()
-					.defaultSuccessUrl("/courses", true) // form based authentication enable just this line
-					.passwordParameter("password")
-					.usernameParameter("username")
-				.and()
-					.rememberMe() // it enables remember me, by setting sessionId expire to 2 weeks
-					.tokenValiditySeconds((int)TimeUnit.DAYS.toSeconds(21))
-					.key("forhasingneedasecurekeytohashuserandexpiretime") 
-					.rememberMeParameter("remember-me")
-				.and()
-					.logout()
-					.logoutUrl("/logout")
-					.logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET")) // csfr is diabled then GET is ok
-					.clearAuthentication(true)
-					.invalidateHttpSession(true)
-					.deleteCookies("JSESSIONID","remember-me")
-					.logoutSuccessUrl("/login");
+				.authenticated();
+					
 				//.httpBasic(); basic auth enable just this line and remove other login type
 	}
 	
@@ -82,8 +71,5 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 		daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
 		daoAuthenticationProvider.setUserDetailsService(applicationUserService);
 		return daoAuthenticationProvider;
-	}
-
-	
-	
+	}	
 }
